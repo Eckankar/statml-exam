@@ -73,9 +73,11 @@ jaak_sigma = median(arrayfun(@(i) norm(starTrainP(coords(i,1)) - starTrainP(coor
 b = exp(1);
 
 cv_indices = crossvalind('Kfold', starTrainN, 5);
-cp = classperf(starTrainC);
+cp_train = classperf(starTrainC);
+cp_test = classperf(starTestC);
 
-correct_rates = zeros(5,7);
+correct_rates_train = zeros(5,7);
+correct_rates_test = zeros(5,7);
 
 for i = -1:1:3
     C = b^i;
@@ -89,10 +91,15 @@ for i = -1:1:3
                           'boxconstraint', C,  ...
                           'kernel_function', 'rbf', ...
                           'rbf_sigma', sigma);
-            prediction = svmclassify(model, starTrainP(testI,:));
-            cp = classperf(cp, prediction, testI);
+            prediction_train = svmclassify(model, starTrainP(testI,:));
+            cp_train = classperf(cp_train, prediction_train, testI);
         end
         
-        correct_rates(i+2,j+4) = cp.CorrectRate;
+        correct_rates_train(i+2,j+4) = cp_train.CorrectRate;
+        
+        prediction_test = svmclassify(model, starTestP);
+        cp_test = classperf(cp_test, prediction_test);
+        
+        correct_rates_test(i+2,j+4) = cp_test.CorrectRate;
     end
 end
