@@ -77,7 +77,7 @@ more closely, explaining the lower RMS. Especially around 1960, the large
 number of sunspots isn't sufficiently modelled by the NN model, whereas the
 linear model captures it.
 
-\section{Question 4}
+\section{Surveying the sky}
 $\sigma_{\text{Jaakkola}}$ was computed by dividing the dataset into stars
 and quasars, followed by finding the median as described. This gives
 $\sigma_{\text{Jaakkola}} = 3.907$.
@@ -106,16 +106,58 @@ as optimal hyperparameters. Using these hyperparameters yields the 0-1 correct r
         \hline
         Data set & 0-1 correct rate \\
         \hline
-        Testing set & $97.87\%$ \\
         Training set & $98.64\%$ \\
+        Testing set  & $97.87\%$ \\
         \hline
     \end{tabular}
     \label{star-correctrates}
     \caption{0-1 correct rates for the SVM with optimal hyperparameters.}
 \end{figure}
 
-\section{Question 5}
+\section{Overfitting}
+\begin{description}
+    \item[Traditional overfitting] {
+        On the sunspot prediction, we could see that increasing the number of
+        hidden nodes in the neural network gave an increase in the RMS on the
+        testing set. If one furthermore didn't employ countermeasures like
+        early stopping, the effect of this would be more pronounced.
 
+        Likewise, performing a different segmentation, giving a too small test
+        set may induce overfitting.
+    }
+    \item[Parameter tweak overfitting] {
+        We performed our model selection in question 4 based solely on the
+        training set performance. If we were to take the test set into
+        consideration, we effectively train the model based on both the
+        training and test set, leaving us no measure of its effectiveness.
+    }
+    \item[Brittle measure] {
+        Instead of determining the optimal hyperparameters for our SVM using
+        $k$-fold crossvalidation, we could have used an approach more prone
+        to overfitting, such as leave-one-out crossvalidation.
+    }
+    \item[Bad statistics] {
+        
+    }
+    \item[Choice of measure] {
+
+    }
+    \item[Incomplete Prediction] {
+
+    }
+    \item[Human-loop overfitting] {
+
+    }
+    \item[Data set selection] {
+
+    }
+    \item[Reprobleming] {
+
+    }
+    \item[Old datasets] {
+
+    }
+\end{description}
 
 \section{Question 6}
 
