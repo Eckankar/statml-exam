@@ -1,3 +1,5 @@
+%% StatML exam 2013 - Sebastian Paaske Tørholm <sebbe@diku.dk>
+
 %% Case 1
 sunTrain = importdata('data/sunspotsTrainStatML.dt');
 sunTest = importdata('data/sunspotsTestStatML.dt');
@@ -158,11 +160,24 @@ grainTestN = size(grainTest, 1);
 % Normalized data gives a significant eigenvalue to the 3rd component
 % Therefore it is not used
 
+% Perform PCA
 [grainPComps, grainScores, grainEvalues] = princomp(grainTrainP);
-figure(2), clf
-plot(1:size(grainEvalues,1), grainEvalues, 'b')
 
+% Perform PCA on normalized data
+[grainPCompsNorm, grainScoresNorm, grainEvaluesNorm] = princomp(normGrainTrainP);
+
+% Plot the eigenvalue spectrum
 figure(3), clf
+hold on
+plot(1:size(grainEvalues,1), grainEvalues, 'b')
+plot(1:size(grainEvaluesNorm,1), grainEvaluesNorm, 'r')
+hold off
+title('Eigenvalue spectrum');
+legend('Unnormalized data', 'Normalized data');
+ylabel('\lambda_i');
+xlabel('i');
+
+figure(4), clf
 colors = ['r', 'g', 'b'];
 hold on
 for i = 1:grainTrainN
@@ -170,55 +185,71 @@ for i = 1:grainTrainN
     plot(grainScores(i,1), grainScores(i,2), strcat(color, 'x'))
 end
 hold off
+title('Seeds training data projected onto the first two principal components')
 
 %% Question 7
+% Perform k-means clustering
 [grainClusters, clusterCentroids] = kmeans(grainTrainP, 3);
 
 figure(4), clf
 hold on
 for i = 1:grainTrainN
     color = colors(grainTrainC(i)+1);
+    % cluster numbers are non-deterministic, so plot needs to be run a few
+    % times for colors to match up.
+    clusterColor = colors(grainClusters(i));
     plot(grainScores(i,1), grainScores(i,2), strcat(color, 'x'))
+    plot(grainScores(i,1), grainScores(i,2), strcat(clusterColor, 'O'))
 end
 for i = 1:3
     c = (clusterCentroids(i,:) - mu) * grainPComps;
-    plot(c(1), c(2), 'ko')
+    plot(c(1), c(2), 'kv')
 end
+title('k-means clusters plotted against real classes')
 hold off
 
 %% Question 8
 
 %% Non-linear classification: k-NN
-nearestNeighborI = knnsearch(grainTrainP, grainTestP, 'K', 5);
-nearestNeighborCs = grainTrainC(nearestNeighborI);
-nearestNeighborC = arrayfun(@(i) mode(nearestNeighborCs(i,:)) ,1:1:grainTestN);
+ks = [3, 5, 7, 9, 15];
 
-figure(5), clf
-hold on
-for i = 1:grainTestN
-    color = colors(nearestNeighborC(i)+1);
+knnSuccesses = zeros(5,1);
+for j = 1:5
+    nearestNeighborI = knnsearch(grainTrainP, grainTestP, 'K', ks(j));
+    nearestNeighborCs = grainTrainC(nearestNeighborI);
+    nearestNeighborC = arrayfun(@(i) mode(nearestNeighborCs(i,:)) ,1:1:grainTestN);
     
-    projP = grainTestP(i,:) * grainPComps;
-    if nearestNeighborC(i) == grainTestC(i)
-        marker = 'x';
-    else
-        marker = 'v';
+    figure(), clf
+    hold on
+    for i = 1:grainTestN
+        color = colors(nearestNeighborC(i)+1);
+
+        projP = grainTestP(i,:) * grainPComps;
+        if nearestNeighborC(i) == grainTestC(i)
+            marker = 'x';
+        else
+            marker = 'v';
+        end
+        
+        plot(projP(1), projP(2), strcat(color, marker))
     end
+    hold off
+    title(strcat(int2str(ks(j)), '-nearest neighbor classification of the test data'))
     
-    plot(projP(1), projP(2), strcat(color, marker))
+    cp = classperf(grainTestC, nearestNeighborC);
+    knnSuccesses(j) = cp.CorrectRate;
 end
-hold off
 
 %% Linear classification: LDA
-[ldaC, ~, ~, ~, ldaCoeff] = classify(grainTestP, grainTrainP, grainTrainC, 'linear');
-
-figure(6), clf
+% Classify training set
+[ldaTrainC, ~, ~, ~, ldaTrainCoeff] = classify(grainTrainP, grainTrainP, grainTrainC, 'linear');
+figure(), clf
 hold on
-for i = 1:grainTestN
-    color = colors(ldaC(i)+1);
+for i = 1:grainTrainN
+    color = colors(ldaTrainC(i)+1);
     
-    projP = grainTestP(i,:) * grainPComps;
-    if ldaC(i) == grainTestC(i)
+    projP = grainTrainP(i,:) * grainPComps;
+    if ldaTrainC(i) == grainTrainC(i)
         marker = 'x';
     else
         marker = 'v';
@@ -226,4 +257,31 @@ for i = 1:grainTestN
     
     plot(projP(1), projP(2), strcat(color, marker))
 end
+title('LDA classification of the grain training data')
 hold off
+
+cp = classperf(grainTrainC, ldaTrainC);
+ldaTrainSuccess = cp.CorrectRate;
+
+% Classify test set
+[ldaTestC, ~, ~, ~, ldaTestCoeff] = classify(grainTestP, grainTrainP, grainTrainC, 'linear');
+
+figure(), clf
+hold on
+for i = 1:grainTestN
+    color = colors(ldaTestC(i)+1);
+    
+    projP = grainTestP(i,:) * grainPComps;
+    if ldaTestC(i) == grainTestC(i)
+        marker = 'x';
+    else
+        marker = 'v';
+    end
+    
+    plot(projP(1), projP(2), strcat(color, marker))
+end
+title('LDA classification of the grain test data')
+hold off
+
+cp = classperf(grainTestC, ldaTestC);
+ldaTestSuccess = cp.CorrectRate;
